@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>SPOTTED</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f0ede6;
+    --yellow: #e8c84a;
+    --red: #c0392b;
+    --gray: #2a2a2a;
+    --mid: #555;
+    --light: #888;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+  }
+
+  body { padding-bottom: 48px; }
+
+  header {
+    border-bottom: 3px solid var(--yellow);
+    padding: 18px 20px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--black);
+    z-index: 10;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    letter-spacing: 0.08em;
+    color: var(--yellow);
+    line-height: 1;
+  }
+
+  header span {
+    font-size: 0.65rem;
+    color: var(--light);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid var(--gray);
+    position: sticky;
+    top: 72px;
+    background: var(--black);
+    z-index: 9;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 14px 6px;
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+    color: var(--mid);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tab.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+
+  .panel { display: none; padding: 20px; }
+  .panel.active { display: block; }
+
+  /* PHOTO */
+  .photo-zone {
+    border: 2px dashed var(--gray);
+    border-radius: 6px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: #181818;
+    margin-bottom: 24px;
+  }
+
+  .photo-zone img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo-zone .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--mid);
+    pointer-events: none;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .photo-zone .placeholder svg { width: 52px; height: 52px; }
+
+  .photo-zone .placeholder p {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.6;
+  }
+
+  .photo-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    font-size: 0;
+  }
+
+  /* TOGGLE */
+  .type-toggle {
+    display: flex;
+    margin-bottom: 24px;
+    border: 2px solid var(--gray);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .type-toggle button {
+    flex: 1;
+    padding: 13px 6px;
+    background: transparent;
+    border: none;
+    color: var(--mid);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+
+  .type-toggle button.active { background: var(--yellow); color: var(--black); }
+
+  .section-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 12px;
+    margin-top: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gray);
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--light);
+    margin-bottom: 6px;
+  }
+
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--gray);
+    border: 1px solid #383838;
+    border-radius: 6px;
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    padding: 12px 14px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .field input:focus, .field textarea:focus { border-color: var(--yellow); }
+
+  .field textarea {
+    resize: none;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .build-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--yellow);
+    color: var(--black);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    margin-top: 24px;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+  }
+
+  /* CARD */
+  #card {
+    background: #0d0d0d;
+    border: 1px solid #222;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  #card img.card-photo {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  .no-photo {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2a2a2a;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+  }
+
+  .card-body { padding: 16px 18px 18px; }
+
+  .card-eyebrow {
+    font-size: 0.52rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 8px;
+  }
+
+  .card-rig {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.06em;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+
+  .card-divider { height: 1px; background: #222; margin: 12px 0; }
+
+  .card-block-label {
+    font-size: 0.48rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+    gap: 8px;
+  }
+
+  .card-row .key {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    color: var(--light);
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .card-row .val {
+    font-size: 0.68rem;
+    color: var(--white);
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .card-use {
+    font-size: 0.65rem;
+    color: #aaa;
+    margin-top: 6px;
+    line-height: 1.55;
+    font-style: italic;
+  }
+
+  .card-footer {
+    padding: 8px 18px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .card-footer .handle {
+    font-size: 0.52rem;
+    letter-spacing: 0.18em;
+    color: #333;
+    text-transform: uppercase;
+  }
+
+  .card-footer .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); }
+
+  /* POST PANEL */
+  .caption-box {
+    background: var(--gray);
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 14px;
+    font-size: 0.72rem;
+    line-height: 1.75;
+    color: var(--white);
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+    min-height: 80px;
+    -webkit-user-select: all;
+    user-select: all;
+  }
+
+  .action-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 6px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+    border: none;
+  }
+
+  .action-btn.primary { background: var(--white); color: var(--black); }
+  .action-btn.ghost { background: transparent; border: 2px solid var(--gray); color: var(--white); }
+
+  .steps {
+    margin-top: 28px;
+    border: 1px solid #222;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    color: var(--yellow);
+    line-height: 1;
+    width: 22px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+
+  .step p {
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--light);
+    line-height: 1.6;
+  }
+
+  .step p strong { color: var(--white); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--yellow);
+    color: var(--black);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    padding: 11px 26px;
+    border-radius: 40px;
+    transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SPOTTED</h1>
+  <span>Car &amp; Truck Field Log</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="go('form')">THE RIG</div>
+  <div class="tab" onclick="go('preview')">PREVIEW</div>
+  <div class="tab" onclick="go('post')">POST IT</div>
+</div>
+
+<!-- FORM -->
+<div class="panel active" id="panel-form">
+
+  <div class="photo-zone">
+    <div class="placeholder" id="photo-placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <p>Take your photo first.<br>Then select it here.</p>
+    </div>
+    <img id="photo-preview" src="" alt="" style="display:none">
+    <input type="file" accept="image/*" id="photo-input" onchange="loadPhoto(event)">
+  </div>
+
+  <div class="type-toggle">
+    <button class="active" id="btn-old" onclick="setType('old')">OLD IRON</button>
+    <button id="btn-new" onclick="setType('new')">FRESH METAL</button>
+  </div>
+
+  <div class="section-label">The Vehicle</div>
+
+  <div class="field">
+    <label>Rig / Ride</label>
+    <input type="text" id="f-rig" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Where Purchased</label>
+      <input type="text" id="f-dealer" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>MSRP / Orig Price</label>
+      <input type="text" id="f-msrp" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="section-label">Original Owner</div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f-orig-name" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Condition</label>
+      <input type="text" id="f-orig-condition" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Original Use</label>
+    <textarea id="f-orig-use" placeholder="" autocorrect="off" spellcheck="false"></textarea>
+  </div>
+
+  <div class="section-label">Current Owner</div>
+
+  <div class="field">
+    <label>Name / Handle</label>
+    <input type="text" id="f-curr-name" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Paid</label>
+      <input type="text" id="f-curr-paid" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Spent</label>
+      <input type="text" id="f-curr-spent" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Current Value</label>
+      <input type="text" id="f-curr-value" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Condition Now</label>
+      <input type="text" id="f-curr-condition" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Current Use</label>
+    <textarea id="f-curr-use" placeholder="" autocorrect="off" spellcheck="false"></textarea>
+  </div>
+
+  <div class="section-label">Spotted</div>
+  <div class="field-row">
+    <div class="field">
+      <label>Spotted By</label>
+      <input type="text" id="f-spotter" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="f-location" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <button class="build-btn" onclick="buildAndGo()">PREVIEW THE CARD →</button>
+
+</div>
+
+<!-- PREVIEW -->
+<div class="panel" id="panel-preview">
+
+  <div id="card">
+    <div class="no-photo" id="card-no-photo">NO PHOTO</div>
+    <img class="card-photo" id="card-photo" src="" alt="" style="display:none">
+    <div class="card-body">
+      <div class="card-eyebrow" id="c-eyebrow">SPOTTED IN THE WILD</div>
+      <div class="card-rig" id="c-rig">—</div>
+      <div class="card-divider"></div>
+      <div class="card-block-label" id="c-orig-label">ORIGINAL OWNER</div>
+      <div class="card-row"><span class="key">Name</span><span class="val" id="c-orig-name">—</span></div>
+      <div class="card-row"><span class="key">Purchased</span><span class="val" id="c-dealer">—</span></div>
+      <div class="card-row"><span class="key">MSRP</span><span class="val" id="c-msrp">—</span></div>
+      <div class="card-use" id="c-orig-use"></div>
+      <div class="card-divider"></div>
+      <div class="card-block-label" id="c-curr-label">CURRENT OWNER</div>
+      <div class="card-row"><span class="key">Name</span><span class="val" id="c-curr-name">—</span></div>
+      <div class="card-row"><span class="key">Paid</span><span class="val" id="c-curr-paid">—</span></div>
+      <div class="card-row"><span class="key">Spent</span><span class="val" id="c-curr-spent">—</span></div>
+      <div class="card-row"><span class="key">Value</span><span class="val" id="c-curr-value">—</span></div>
+      <div class="card-use" id="c-curr-use"></div>
+    </div>
+    <div class="card-footer">
+      <span class="handle" id="c-spotter">SPOTTED</span>
+      <span class="dot"></span>
+      <span class="handle" id="c-loc">—</span>
+    </div>
+  </div>
+
+  <button class="action-btn ghost" onclick="go('form')">← BACK TO EDIT</button>
+  <button class="action-btn primary" onclick="go('post')">GET THE CAPTION →</button>
+
+</div>
+
+<!-- POST IT -->
+<div class="panel" id="panel-post">
+
+  <div class="section-label">Caption</div>
+  <div class="caption-box" id="caption-out">—</div>
+  <button class="action-btn primary" onclick="copyCaption()">COPY CAPTION</button>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <p>Open <strong>Instagram</strong> → new post</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <p>Select the <strong>same photo</strong> from your camera roll</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <p>Paste caption → <strong>Post</strong></p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">—</div>
+
+<script>
+  var photoDataUrl = null;
+  var vehicleType = 'old';
+
+  function loadPhoto(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      photoDataUrl = ev.target.result;
+      document.getElementById('photo-preview').src = photoDataUrl;
+      document.getElementById('photo-preview').style.display = 'block';
+      document.getElementById('photo-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setType(type) {
+    vehicleType = type;
+    document.getElementById('btn-old').classList.toggle('active', type === 'old');
+    document.getElementById('btn-new').classList.toggle('active', type === 'new');
+  }
+
+  function val(id) {
+    var el = document.getElementById(id);
+    return el ? (el.value || '').trim() : '';
+  }
+
+  function setText(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v || '—';
+  }
+
+  function buildAndGo() {
+    if (document.activeElement) document.activeElement.blur();
+    setTimeout(function() {
+      renderCard();
+      renderCaption();
+      go('preview');
+    }, 100);
+  }
+
+  function renderCard() {
+    // photo
+    var photo = document.getElementById('c-photo') || document.getElementById('card-photo');
+    var noPhoto = document.getElementById('card-no-photo');
+    var cardImg = document.getElementById('card-photo');
+    if (photoDataUrl) {
+      cardImg.src = photoDataUrl;
+      cardImg.style.display = 'block';
+      noPhoto.style.display = 'none';
+    } else {
+      cardImg.style.display = 'none';
+      noPhoto.style.display = 'flex';
+    }
+
+    // type labels
+    if (vehicleType === 'new') {
+      document.getElementById('c-eyebrow').textContent = 'FRESH OFF THE LOT';
+      document.getElementById('c-orig-label').textContent = 'BUYER';
+      document.getElementById('c-curr-label').textContent = 'FUTURE OWNER (PROJECTED)';
+    } else {
+      document.getElementById('c-eyebrow').textContent = 'SPOTTED IN THE WILD';
+      document.getElementById('c-orig-label').textContent = 'ORIGINAL OWNER';
+      document.getElementById('c-curr-label').textContent = 'CURRENT OWNER';
+    }
+
+    setText('c-rig',        val('f-rig') || 'UNNAMED RIG');
+    setText('c-orig-name',  val('f-orig-name'));
+    setText('c-dealer',     val('f-dealer'));
+    setText('c-msrp',       val('f-msrp'));
+    setText('c-curr-name',  val('f-curr-name'));
+    setText('c-curr-paid',  val('f-curr-paid'));
+    setText('c-curr-spent', val('f-curr-spent'));
+    setText('c-curr-value', val('f-curr-value'));
+    setText('c-spotter',    val('f-spotter') || 'SPOTTED');
+    setText('c-loc',        val('f-location'));
+
+    document.getElementById('c-orig-use').textContent = val('f-orig-use');
+    document.getElementById('c-curr-use').textContent = val('f-curr-use');
+  }
+
+  function renderCaption() {
+    var lines = [];
+    var rig = val('f-rig') || 'UNNAMED RIG';
+    lines.push('RIG: ' + rig);
+    if (val('f-dealer'))     lines.push('PURCHASED: ' + val('f-dealer'));
+    if (val('f-msrp'))       lines.push('MSRP: ' + val('f-msrp'));
+    if (val('f-orig-name'))  lines.push('ORIGINAL OWNER: ' + val('f-orig-name'));
+    if (val('f-orig-use'))   lines.push('ORIGINAL USE: ' + val('f-orig-use'));
+    lines.push('');
+    if (val('f-curr-name'))  lines.push('CURRENT OWNER: ' + val('f-curr-name'));
+    if (val('f-curr-paid'))  lines.push('PAID: ' + val('f-curr-paid'));
+    if (val('f-curr-spent')) lines.push('SPENT: ' + val('f-curr-spent'));
+    if (val('f-curr-value')) lines.push('VALUE: ' + val('f-curr-value'));
+    if (val('f-curr-use'))   lines.push('CURRENT USE: ' + val('f-curr-use'));
+    lines.push('');
+    var tag = [val('f-spotter'), val('f-location')].filter(Boolean).join(' · ');
+    if (tag) lines.push('📍 ' + tag);
+    lines.push('#spotted #carculture #trucklife #patina');
+    document.getElementById('caption-out').textContent = lines.join('\n').trim();
+  }
+
+  function go(tab) {
+    document.querySelectorAll('.tab').forEach(function(t, i) {
+      t.classList.toggle('active', ['form','preview','post'][i] === tab);
+    });
+    document.querySelectorAll('.panel').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    document.getElementById('panel-' + tab).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function copyCaption() {
+    var text = document.getElementById('caption-out').textContent;
+    if (!text || text === '—') { toast('BUILD THE CARD FIRST'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() { toast('CAPTION COPIED'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('CAPTION COPIED');
+    }
+  }
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2400);
+  }
+</script>
+</body>
+</html>
