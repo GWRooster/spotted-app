@@ -496,7 +496,7 @@
 
 <!-- MY SPOTS -->
 <div class="panel" id="panel-mine">
-  <div class="section-label">My Spots</div>
+  <div class="section-label">All Spots</div>
   <div class="spots-list" id="my-spots-list">
     <div class="empty-state">Loading...</div>
   </div>
@@ -897,12 +897,11 @@
 
   // ── MY SPOTS ──
   async function loadMySpots() {
-    if (!currentUser) { document.getElementById('my-spots-list').innerHTML = '<div class="empty-state">Select a user first.</div>'; return; }
     document.getElementById('my-spots-list').innerHTML = '<div class="empty-state">Loading...</div>';
     try {
-      var res = await sbFetch('/rest/v1/spots?created_by=eq.' + currentUser + '&order=created_at.desc&select=*', { method: 'GET' });
+      var res = await sbFetch('/rest/v1/spots?order=created_at.desc&select=*', { method: 'GET' });
       var rows = await res.json();
-      renderSpotsList('my-spots-list', rows, true);
+      renderSpotsList('my-spots-list', rows, false);
     } catch(e) {
       document.getElementById('my-spots-list').innerHTML = '<div class="empty-state">Could not load.</div>';
     }
