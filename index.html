@@ -271,11 +271,35 @@
   /* SPOTS LIST */
   .spots-list { margin-top: 4px; }
 
+  .spot-card-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  .delete-btn {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 80px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+  }
+
   .spot-card {
     background: #111; border: 1px solid #222; border-radius: 6px;
-    padding: 14px; margin-bottom: 12px; cursor: pointer;
-    transition: border-color 0.15s;
+    padding: 14px; cursor: pointer; transition: transform 0.0s;
+    position: relative; z-index: 2; margin-bottom: 0;
   }
+
   .spot-card:active { border-color: var(--yellow); }
 
   .spot-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
@@ -746,9 +770,30 @@
       }
 
       toast('DRAFT SAVED');
+      resetForm();
     } catch(e) {
       toast('SAVE FAILED'); console.error(e);
     }
+  }
+
+  function resetForm() {
+    var fields = ['f-rig','f-dealer','f-msrp','f-orig-name','f-orig-condition','f-orig-use',
+                  'f-curr-name','f-curr-paid','f-curr-spent','f-curr-value','f-curr-condition',
+                  'f-curr-use','f-spotter','f-location'];
+    fields.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    photoDataUrl = null;
+    photoFile = null;
+    currentSpotId = null;
+    currentSpotSubmitter = null;
+    document.getElementById('photo-preview').src = '';
+    document.getElementById('photo-preview').style.display = 'none';
+    document.getElementById('photo-placeholder').style.display = 'flex';
+    document.getElementById('photo-input').value = '';
+    setType('old');
+    approvals = { rooster: false, sean: false, phil: false };
   }
 
   // ── SAVE & SEND ──
@@ -934,19 +979,89 @@
       var se = s.approved_sean ? 'pip-on' : 'pip-off';
       var ph = s.approved_phil ? 'pip-on' : 'pip-off';
       var date = new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-      return '<div class="spot-card" onclick="openSpot(\'' + s.id + '\')">' +
-        '<div class="spot-card-header">' +
-          '<div class="spot-card-rig">' + (s.rig || 'UNNAMED RIG') + '</div>' +
-          '<div class="spot-card-status ' + statusClass + '">' + statusLabel + '</div>' +
-        '</div>' +
-        '<div class="spot-card-meta">By ' + (s.created_by || '—') + '  ·  ' + date + '</div>' +
-        '<div class="spot-card-approvals">' +
-          '<span class="approval-pip ' + r + '">Rooster</span>' +
-          '<span class="approval-pip ' + se + '">Sean</span>' +
-          '<span class="approval-pip ' + ph + '">Phil</span>' +
+      var thumb = s.photo_url
+        ? '<img src="' + s.photo_url + '" style="width:56px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;">'
+        : '<div style="width:56px;height:56px;background:#1a1a1a;border-radius:4px;flex-shrink:0;"></div>';
+      var canDelete = (s.created_by === currentUser);
+      var deleteBtn = canDelete
+        ? '<button class="delete-btn" onclick="event.stopPropagation();deleteSpot(\'' + s.id + '\',\'' + containerId + '\')">DELETE</button>'
+        : '';
+      return '<div class="spot-card-wrap" id="wrap-' + s.id + '">' +
+        deleteBtn +
+        '<div class="spot-card" onclick="openSpot(\'' + s.id + '\')" ' +
+          (canDelete ? 'data-deletable="true" onmousedown="swipeStart(event,\'' + s.id + '\')" ontouchstart="swipeStart(event,\'' + s.id + '\')"' : '') + '>' +
+          '<div style="display:flex;gap:12px;align-items:flex-start;">' +
+            thumb +
+            '<div style="flex:1;min-width:0;">' +
+              '<div class="spot-card-header">' +
+                '<div class="spot-card-rig">' + (s.rig || 'UNNAMED RIG') + '</div>' +
+                '<div class="spot-card-status ' + statusClass + '">' + statusLabel + '</div>' +
+              '</div>' +
+              '<div class="spot-card-meta">By ' + (s.created_by || '—') + '  ·  ' + date + '</div>' +
+              '<div class="spot-card-approvals">' +
+                '<span class="approval-pip ' + r + '">Rooster</span>' +
+                '<span class="approval-pip ' + se + '">Sean</span>' +
+                '<span class="approval-pip ' + ph + '">Phil</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
       '</div>';
     }).join('');
+    initSwipe();
+  }
+
+  // ── SWIPE TO DELETE ──
+  var swipeStartX = 0;
+  var swipeEl = null;
+  var swipeId = null;
+
+  function swipeStart(e, id) {
+    swipeStartX = e.touches ? e.touches[0].clientX : e.clientX;
+    swipeId = id;
+    swipeEl = document.querySelector('#wrap-' + id + ' .spot-card');
+    swipeEl.style.transition = 'none';
+  }
+
+  function initSwipe() {
+    document.querySelectorAll('.spot-card[data-deletable]').forEach(function(card) {
+      card.addEventListener('touchmove', function(e) {
+        if (!swipeEl || swipeEl !== card) return;
+        var dx = e.touches[0].clientX - swipeStartX;
+        if (dx < 0) {
+          card.style.transform = 'translateX(' + Math.max(dx, -100) + 'px)';
+          e.preventDefault();
+        }
+      }, { passive: false });
+      card.addEventListener('touchend', function() {
+        if (!swipeEl || swipeEl !== card) return;
+        var wrap = document.getElementById('wrap-' + swipeId);
+        var deleteBtn = wrap ? wrap.querySelector('.delete-btn') : null;
+        var currentX = parseFloat(card.style.transform.replace('translateX(','')) || 0;
+        if (currentX < -60) {
+          card.style.transition = 'transform 0.2s';
+          card.style.transform = 'translateX(-80px)';
+          if (deleteBtn) deleteBtn.style.opacity = '1';
+        } else {
+          card.style.transition = 'transform 0.2s';
+          card.style.transform = 'translateX(0)';
+          if (deleteBtn) deleteBtn.style.opacity = '0';
+        }
+        swipeEl = null; swipeId = null;
+      });
+    });
+  }
+
+  async function deleteSpot(id, containerId) {
+    if (!confirm('Delete this spot?')) return;
+    try {
+      await sbFetch('/rest/v1/spots?id=eq.' + id, { method: 'DELETE' });
+      var wrap = document.getElementById('wrap-' + id);
+      if (wrap) wrap.remove();
+      toast('DELETED');
+    } catch(e) {
+      toast('DELETE FAILED');
+    }
   }
 
   function openSpot(id) {
