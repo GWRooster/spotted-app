@@ -1,1 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>SPOTTED</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f0ede6;
+    --yellow: #e8c84a;
+    --red: #c0392b;
+    --gray: #2a2a2a;
+    --mid: #555;
+    --light: #888;
+    --green: #2ecc71;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+  }
+
+  body { padding-bottom: 60px; }
+
+  /* USER PICKER OVERLAY */
+  #user-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--black);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 30px;
+  }
+
+  #user-overlay h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    color: var(--yellow);
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  #user-overlay p {
+    font-size: 0.65rem;
+    color: var(--light);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+
+  .user-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--gray);
+    border: 2px solid #333;
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    margin-bottom: 14px;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .user-btn:active { background: var(--yellow); color: var(--black); border-color: var(--yellow); }
+
+  /* HEADER */
+  header {
+    border-bottom: 3px solid var(--yellow);
+    padding: 14px 20px 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--black);
+    z-index: 10;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 0.08em;
+    color: var(--yellow);
+    line-height: 1;
+  }
+
+  #user-badge {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--light);
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid #333;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid var(--gray);
+    position: sticky;
+    top: 58px;
+    background: var(--black);
+    z-index: 9;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 72px;
+    padding: 11px 4px;
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+  }
+
+  .tab.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+
+  .panel { display: none; padding: 20px; }
+  .panel.active { display: block; }
+
+  /* PHOTO */
+  .photo-zone {
+    border: 2px dashed var(--gray);
+    border-radius: 6px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: #181818;
+    margin-bottom: 20px;
+  }
+
+  .photo-zone img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .photo-zone .placeholder {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px; color: var(--mid); pointer-events: none;
+    padding: 20px; text-align: center;
+  }
+
+  .photo-zone .placeholder svg { width: 48px; height: 48px; }
+  .photo-zone .placeholder p { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; line-height: 1.6; }
+  .photo-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; font-size: 0; }
+
+  /* TOGGLE */
+  .type-toggle { display: flex; margin-bottom: 20px; border: 2px solid var(--gray); border-radius: 6px; overflow: hidden; }
+  .type-toggle button {
+    flex: 1; padding: 12px 6px; background: transparent; border: none;
+    color: var(--mid); font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    letter-spacing: 0.12em; cursor: pointer; -webkit-appearance: none;
+  }
+  .type-toggle button.active { background: var(--yellow); color: var(--black); }
+
+  .section-label {
+    font-size: 0.55rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: 10px; margin-top: 6px;
+    padding-bottom: 5px; border-bottom: 1px solid var(--gray);
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--light); margin-bottom: 5px; }
+  .field input, .field textarea {
+    width: 100%; background: var(--gray); border: 1px solid #383838;
+    border-radius: 6px; color: var(--white); font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px; padding: 11px 13px; outline: none;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--yellow); }
+  .field textarea { resize: none; min-height: 76px; line-height: 1.5; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* BUTTONS */
+  .build-btn {
+    width: 100%; padding: 17px; background: var(--yellow); color: var(--black);
+    border: none; border-radius: 6px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem; letter-spacing: 0.15em; cursor: pointer; margin-top: 20px;
+    -webkit-appearance: none; touch-action: manipulation;
+  }
+
+  .action-btn {
+    width: 100%; padding: 15px; border-radius: 6px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem; letter-spacing: 0.15em; cursor: pointer; margin-bottom: 10px;
+    -webkit-appearance: none; touch-action: manipulation; border: none;
+  }
+  .action-btn.primary { background: var(--white); color: var(--black); }
+  .action-btn.ghost { background: transparent; border: 2px solid var(--gray); color: var(--white); }
+  .action-btn.yellow { background: var(--yellow); color: var(--black); }
+  .action-btn.green { background: var(--green); color: var(--black); }
+
+  /* CARD */
+  #card {
+    background: #0d0d0d; border: 1px solid #222;
+    border-radius: 4px; overflow: hidden; margin-bottom: 16px;
+  }
+  #card img.card-photo { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+  .no-photo { width: 100%; aspect-ratio: 1/1; background: #1a1a1a; display: flex; align-items: center; justify-content: center; color: #2a2a2a; font-size: 0.65rem; letter-spacing: 0.2em; }
+  .card-body { padding: 14px 16px 16px; }
+  .card-eyebrow { font-size: 0.5rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--yellow); margin-bottom: 6px; }
+  .card-rig { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.06em; color: var(--white); line-height: 1; margin-bottom: 12px; }
+  .card-divider { height: 1px; background: #222; margin: 10px 0; }
+  .card-block-label { font-size: 0.46rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
+  .card-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 8px; }
+  .card-row .key { font-size: 0.55rem; letter-spacing: 0.1em; color: var(--light); text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+  .card-row .val { font-size: 0.65rem; color: var(--white); text-align: right; word-break: break-word; }
+  .card-use { font-size: 0.62rem; color: #aaa; margin-top: 5px; line-height: 1.5; font-style: italic; }
+  .card-footer { padding: 7px 16px 10px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; }
+  .card-footer .handle { font-size: 0.5rem; letter-spacing: 0.18em; color: #333; text-transform: uppercase; }
+  .card-footer .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); }
+
+  /* APPROVAL */
+  .approval-block {
+    background: #111; border: 1px solid #222; border-radius: 6px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .approval-title { font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--yellow); margin-bottom: 14px; }
+  .approval-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid #1a1a1a;
+  }
+  .approval-row:last-child { border-bottom: none; }
+  .approval-name { font-size: 0.8rem; letter-spacing: 0.1em; color: var(--white); }
+  .approval-name.approved { color: var(--green); }
+  .approval-check {
+    width: 32px; height: 32px; border-radius: 6px; border: 2px solid #333;
+    background: transparent; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem; -webkit-appearance: none;
+    touch-action: manipulation; transition: all 0.15s;
+  }
+  .approval-check.checked { background: var(--green); border-color: var(--green); }
+  .approval-note { font-size: 0.58rem; color: var(--mid); margin-top: 12px; line-height: 1.6; letter-spacing: 0.05em; }
+  .approval-note.ready { color: var(--green); }
+
+  /* CAPTION */
+  .caption-box {
+    background: var(--gray); border: 1px solid #333; border-radius: 6px;
+    padding: 13px; font-size: 0.7rem; line-height: 1.75; color: var(--white);
+    white-space: pre-wrap; margin-bottom: 12px; min-height: 70px;
+    -webkit-user-select: all; user-select: all;
+  }
+
+  /* SPOTS LIST */
+  .spots-list { margin-top: 4px; }
+
+  .spot-card-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  .delete-btn {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 80px;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+  }
+
+  .spot-card {
+    background: #111; border: 1px solid #222; border-radius: 6px;
+    padding: 14px; cursor: pointer; transition: transform 0.0s;
+    position: relative; z-index: 2; margin-bottom: 0;
+  }
+
+  .spot-card:active { border-color: var(--yellow); }
+
+  .spot-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .spot-card-rig { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.06em; color: var(--white); line-height: 1.1; }
+  .spot-card-status { font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 3px 8px; border-radius: 10px; }
+  .status-draft { background: #2a2a2a; color: var(--light); }
+  .status-ready { background: #1a3a2a; color: var(--green); }
+  .spot-card-meta { font-size: 0.58rem; color: var(--light); letter-spacing: 0.06em; }
+  .spot-card-approvals { display: flex; gap: 6px; margin-top: 8px; }
+  .approval-pip { font-size: 0.48rem; letter-spacing: 0.1em; padding: 2px 7px; border-radius: 8px; text-transform: uppercase; }
+  .pip-on { background: #1a3a2a; color: var(--green); }
+  .pip-off { background: #2a2a2a; color: var(--mid); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--mid); font-size: 0.68rem; letter-spacing: 0.12em; line-height: 2; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--yellow); color: var(--black);
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem;
+    letter-spacing: 0.15em; padding: 10px 24px; border-radius: 40px;
+    transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- USER PICKER -->
+<div id="user-overlay">
+  <h2>SPOTTED</h2>
+  <p>Who are you?</p>
+  <button class="user-btn" onclick="setUser('Rooster')">ROOSTER</button>
+  <button class="user-btn" onclick="setUser('Sean')">SEAN</button>
+  <button class="user-btn" onclick="setUser('Phil')">PHIL</button>
+  <button class="user-btn" onclick="setUser('Mr. Andy Clark')">MR. ANDY CLARK</button>
+</div>
+
+<header>
+  <h1>SPOTTED</h1>
+  <div id="user-badge" onclick="switchUser()">— —</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="go('form')">NEW</div>
+  <div class="tab" onclick="go('preview')">PREVIEW</div>
+  <div class="tab" onclick="go('post')">POST IT</div>
+  <div class="tab" onclick="go('mine'); loadMySpots()">MY SPOTS</div>
+  <div class="tab" onclick="go('shared'); loadSharedSpots()">SHARED</div>
+</div>
+
+<!-- FORM -->
+<div class="panel active" id="panel-form">
+
+  <div class="photo-zone">
+    <div class="placeholder" id="photo-placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <p>Take your photo first.<br>Then select it here.</p>
+    </div>
+    <img id="photo-preview" src="" alt="" style="display:none">
+    <input type="file" accept="image/*" id="photo-input" onchange="loadPhoto(event)">
+  </div>
+
+  <div class="type-toggle">
+    <button class="active" id="btn-old" onclick="setType('old')">OLD IRON</button>
+    <button id="btn-new" onclick="setType('new')">FRESH METAL</button>
+  </div>
+
+  <div class="section-label">The Vehicle</div>
+  <div class="field">
+    <label>Rig / Ride</label>
+    <input type="text" id="f-rig" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Where Purchased</label>
+      <input type="text" id="f-dealer" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>MSRP / Orig Price</label>
+      <input type="text" id="f-msrp" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="section-label">Original Owner</div>
+  <div class="field-row">
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f-orig-name" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Condition</label>
+      <input type="text" id="f-orig-condition" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+  <div class="field">
+    <label>Original Use</label>
+    <textarea id="f-orig-use" placeholder="" autocorrect="off" spellcheck="false"></textarea>
+  </div>
+
+  <div class="section-label">Current Owner</div>
+  <div class="field">
+    <label>Name / Handle</label>
+    <input type="text" id="f-curr-name" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Paid</label>
+      <input type="text" id="f-curr-paid" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Spent</label>
+      <input type="text" id="f-curr-spent" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label>Current Value</label>
+      <input type="text" id="f-curr-value" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Condition Now</label>
+      <input type="text" id="f-curr-condition" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+  <div class="field">
+    <label>Current Use</label>
+    <textarea id="f-curr-use" placeholder="" autocorrect="off" spellcheck="false"></textarea>
+  </div>
+
+  <div class="section-label">Spotted</div>
+  <div class="field-row">
+    <div class="field">
+      <label>Spotted By</label>
+      <input type="text" id="f-spotter" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="f-location" placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+  </div>
+
+  <button class="build-btn" onclick="buildAndGo()">PREVIEW THE CARD →</button>
+  <button class="action-btn ghost" style="margin-top:10px" onclick="saveDraft()">SAVE DRAFT</button>
+
+</div>
+
+<!-- PREVIEW -->
+<div class="panel" id="panel-preview">
+  <div id="card">
+    <div class="no-photo" id="card-no-photo">NO PHOTO</div>
+    <img class="card-photo hidden" id="card-photo" src="" alt="">
+    <div class="card-body">
+      <div class="card-eyebrow" id="c-eyebrow">SPOTTED IN THE WILD</div>
+      <div class="card-rig" id="c-rig">—</div>
+      <div class="card-divider"></div>
+      <div class="card-block-label" id="c-orig-label">ORIGINAL OWNER</div>
+      <div class="card-row"><span class="key">Name</span><span class="val" id="c-orig-name">—</span></div>
+      <div class="card-row"><span class="key">Purchased</span><span class="val" id="c-dealer">—</span></div>
+      <div class="card-row"><span class="key">MSRP</span><span class="val" id="c-msrp">—</span></div>
+      <div class="card-use" id="c-orig-use"></div>
+      <div class="card-divider"></div>
+      <div class="card-block-label" id="c-curr-label">CURRENT OWNER</div>
+      <div class="card-row"><span class="key">Name</span><span class="val" id="c-curr-name">—</span></div>
+      <div class="card-row"><span class="key">Paid</span><span class="val" id="c-curr-paid">—</span></div>
+      <div class="card-row"><span class="key">Spent</span><span class="val" id="c-curr-spent">—</span></div>
+      <div class="card-row"><span class="key">Value</span><span class="val" id="c-curr-value">—</span></div>
+      <div class="card-use" id="c-curr-use"></div>
+    </div>
+    <div class="card-footer">
+      <span class="handle" id="c-spotter">SPOTTED</span>
+      <span class="dot"></span>
+      <span class="handle" id="c-loc">—</span>
+    </div>
+  </div>
+
+  <button class="action-btn ghost" onclick="go('form')">← BACK TO EDIT</button>
+  <button class="action-btn yellow" onclick="saveDraftAndSend()">SAVE & SEND TO BUDDY</button>
+  <button class="action-btn primary" onclick="go('post')">GET THE CAPTION →</button>
+</div>
+
+<!-- POST IT -->
+<div class="panel" id="panel-post">
+
+  <div class="approval-block">
+    <div class="approval-title" id="approval-title">All Three Must Approve Before Posting</div>
+    <div class="approval-row" id="approval-row-rooster">
+      <span class="approval-name" id="approve-name-rooster">Rooster</span>
+      <button class="approval-check" id="check-rooster" onclick="toggleApproval('rooster')"></button>
+    </div>
+    <div class="approval-row" id="approval-row-sean">
+      <span class="approval-name" id="approve-name-sean">Sean</span>
+      <button class="approval-check" id="check-sean" onclick="toggleApproval('sean')"></button>
+    </div>
+    <div class="approval-row" id="approval-row-phil">
+      <span class="approval-name" id="approve-name-phil">Phil</span>
+      <button class="approval-check" id="check-phil" onclick="toggleApproval('phil')"></button>
+    </div>
+    <div class="approval-note" id="approval-status">Waiting on approvals.</div>
+  </div>
+
+  <div class="section-label">Caption</div>
+  <div class="caption-box" id="caption-out">—</div>
+  <button class="action-btn primary" onclick="copyCaption()">COPY CAPTION</button>
+
+  <div style="margin-top:20px; font-size:0.6rem; color:var(--mid); line-height:1.8; letter-spacing:0.08em;">
+    1. Open Instagram → new post<br>
+    2. Select same photo from camera roll<br>
+    3. Paste caption → Post
+  </div>
+</div>
+
+<!-- MY SPOTS -->
+<div class="panel" id="panel-mine">
+  <div class="section-label">All Spots</div>
+  <div class="spots-list" id="my-spots-list">
+    <div class="empty-state">Loading...</div>
+  </div>
+</div>
+
+<!-- SHARED SPOTS -->
+<div class="panel" id="panel-shared">
+  <div class="section-label">Shared Spots — Needs Content</div>
+  <div class="spots-list" id="shared-spots-list">
+    <div class="empty-state">Loading...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">—</div>
+
+<script>
+  var SUPABASE_URL = 'https://ytijmfkktfjoiuahszip.supabase.co';
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aWptZmtrdGZqb2l1YWhzemlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDgxMTEsImV4cCI6MjA5NjUyNDExMX0.-lPni2MzjtteVUhf_4TvORl3MU9K5wSyEKcAaBImtKE';
+
+  var currentUser = null;
+  var photoDataUrl = null;
+  var photoFile = null;
+  var vehicleType = 'old';
+  var currentSpotId = null;
+  var currentSpotSubmitter = null;
+  var approvals = { rooster: false, sean: false, phil: false };
+
+  // ── USER ──
+  function setUser(name) {
+    currentUser = name;
+    sessionStorage.setItem('spotted_user', name);
+    document.getElementById('user-overlay').style.display = 'none';
+    document.getElementById('user-badge').textContent = name.toUpperCase();
+    checkUrlForSpot();
+  }
+
+  function switchUser() {
+    document.getElementById('user-overlay').style.display = 'flex';
+  }
+
+  // ── INIT ──
+  window.addEventListener('load', function() {
+    var saved = sessionStorage.getItem('spotted_user');
+    if (saved) {
+      currentUser = saved;
+      document.getElementById('user-overlay').style.display = 'none';
+      document.getElementById('user-badge').textContent = saved.toUpperCase();
+      checkUrlForSpot();
+    }
+  });
+
+  function checkUrlForSpot() {
+    var params = new URLSearchParams(window.location.search);
+    var spotId = params.get('spot');
+    if (spotId) {
+      loadSpotById(spotId);
+    }
+  }
+
+  // ── PHOTO ──
+  function loadPhoto(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    photoFile = file;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      photoDataUrl = ev.target.result;
+      document.getElementById('photo-preview').src = photoDataUrl;
+      document.getElementById('photo-preview').style.display = 'block';
+      document.getElementById('photo-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setType(type) {
+    vehicleType = type;
+    document.getElementById('btn-old').classList.toggle('active', type === 'old');
+    document.getElementById('btn-new').classList.toggle('active', type === 'new');
+  }
+
+  // ── FIELD READ ──
+  function val(id) {
+    var el = document.getElementById(id);
+    return el ? (el.value || '').trim() : '';
+  }
+
+  function setText(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v || '—';
+  }
+
+  function setField(id, v) {
+    var el = document.getElementById(id);
+    if (el && v) el.value = v;
+  }
+
+  // ── BUILD CARD ──
+  function buildAndGo() {
+    if (document.activeElement) document.activeElement.blur();
+    setTimeout(function() {
+      renderCard();
+      renderCaption();
+      go('preview');
+    }, 100);
+  }
+
+  function renderCard() {
+    var cardImg = document.getElementById('card-photo');
+    var noPhoto = document.getElementById('card-no-photo');
+    if (photoDataUrl) {
+      cardImg.src = photoDataUrl;
+      cardImg.style.display = 'block';
+      cardImg.classList.remove('hidden');
+      noPhoto.style.display = 'none';
+    } else {
+      cardImg.style.display = 'none';
+      cardImg.classList.add('hidden');
+      noPhoto.style.display = 'flex';
+    }
+
+    if (vehicleType === 'new') {
+      document.getElementById('c-eyebrow').textContent = 'FRESH OFF THE LOT';
+      document.getElementById('c-orig-label').textContent = 'BUYER';
+      document.getElementById('c-curr-label').textContent = 'FUTURE OWNER (PROJECTED)';
+    } else {
+      document.getElementById('c-eyebrow').textContent = 'SPOTTED IN THE WILD';
+      document.getElementById('c-orig-label').textContent = 'ORIGINAL OWNER';
+      document.getElementById('c-curr-label').textContent = 'CURRENT OWNER';
+    }
+
+    setText('c-rig', val('f-rig') || 'UNNAMED RIG');
+    setText('c-orig-name', val('f-orig-name'));
+    setText('c-dealer', val('f-dealer'));
+    setText('c-msrp', val('f-msrp'));
+    setText('c-curr-name', val('f-curr-name'));
+    setText('c-curr-paid', val('f-curr-paid'));
+    setText('c-curr-spent', val('f-curr-spent'));
+    setText('c-curr-value', val('f-curr-value'));
+    setText('c-spotter', val('f-spotter') || currentUser || 'SPOTTED');
+    setText('c-loc', val('f-location'));
+    document.getElementById('c-orig-use').textContent = val('f-orig-use');
+    document.getElementById('c-curr-use').textContent = val('f-curr-use');
+  }
+
+  function renderCaption() {
+    var lines = [];
+    lines.push('RIG: ' + (val('f-rig') || 'UNNAMED RIG'));
+    if (val('f-dealer'))     lines.push('PURCHASED: ' + val('f-dealer'));
+    if (val('f-msrp'))       lines.push('MSRP: ' + val('f-msrp'));
+    if (val('f-orig-name'))  lines.push('ORIGINAL OWNER: ' + val('f-orig-name'));
+    if (val('f-orig-use'))   lines.push('ORIGINAL USE: ' + val('f-orig-use'));
+    lines.push('');
+    if (val('f-curr-name'))  lines.push('CURRENT OWNER: ' + val('f-curr-name'));
+    if (val('f-curr-paid'))  lines.push('PAID: ' + val('f-curr-paid'));
+    if (val('f-curr-spent')) lines.push('SPENT: ' + val('f-curr-spent'));
+    if (val('f-curr-value')) lines.push('VALUE: ' + val('f-curr-value'));
+    if (val('f-curr-use'))   lines.push('CURRENT USE: ' + val('f-curr-use'));
+    lines.push('');
+    var tag = [val('f-spotter') || currentUser, val('f-location')].filter(Boolean).join(' · ');
+    if (tag) lines.push('📍 ' + tag);
+    lines.push('#spotted #carculture #trucklife #patina');
+    document.getElementById('caption-out').textContent = lines.join('\n').trim();
+  }
+
+  // ── SUPABASE HELPERS ──
+  function sbFetch(path, opts) {
+    var headers = Object.assign({
+      'Content-Type': 'application/json',
+      'apikey': ANON_KEY,
+      'Authorization': 'Bearer ' + ANON_KEY
+    }, opts.headers || {});
+    return fetch(SUPABASE_URL + path, Object.assign({}, opts, { headers: headers }));
+  }
+
+  async function uploadPhoto(file, spotId) {
+    if (!file) return null;
+    var ext = file.name.split('.').pop() || 'jpg';
+    var path = spotId + '.' + ext;
+    var res = await fetch(SUPABASE_URL + '/storage/v1/object/photos/' + path, {
+      method: 'POST',
+      headers: {
+        'apikey': ANON_KEY,
+        'Authorization': 'Bearer ' + ANON_KEY,
+        'Content-Type': file.type,
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+    if (!res.ok) return null;
+    return SUPABASE_URL + '/storage/v1/object/public/photos/' + path;
+  }
+
+  function collectFields() {
+    return {
+      created_by: currentUser,
+      rig: val('f-rig'),
+      dealer: val('f-dealer'),
+      msrp: val('f-msrp'),
+      orig_name: val('f-orig-name'),
+      orig_condition: val('f-orig-condition'),
+      orig_use: val('f-orig-use'),
+      curr_name: val('f-curr-name'),
+      curr_paid: val('f-curr-paid'),
+      curr_spent: val('f-curr-spent'),
+      curr_value: val('f-curr-value'),
+      curr_condition: val('f-curr-condition'),
+      curr_use: val('f-curr-use'),
+      spotter: val('f-spotter') || currentUser,
+      location: val('f-location'),
+      vehicle_type: vehicleType,
+      status: 'draft'
+    };
+  }
+
+  // ── SAVE DRAFT ──
+  async function saveDraft() {
+    if (!currentUser) { toast('SELECT USER FIRST'); return; }
+    if (document.activeElement) document.activeElement.blur();
+    toast('SAVING...');
+
+    var data = collectFields();
+
+    try {
+      var res = await sbFetch('/rest/v1/spots', {
+        method: 'POST',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        var err = await res.text();
+        toast('SAVE FAILED'); console.error(err); return;
+      }
+
+      var rows = await res.json();
+      var spot = rows[0];
+      currentSpotId = spot.id;
+
+      if (photoFile) {
+        var url = await uploadPhoto(photoFile, spot.id);
+        if (url) {
+          await sbFetch('/rest/v1/spots?id=eq.' + spot.id, {
+            method: 'PATCH',
+            body: JSON.stringify({ photo_url: url })
+          });
+        }
+      }
+
+      toast('DRAFT SAVED');
+      resetForm();
+    } catch(e) {
+      toast('SAVE FAILED'); console.error(e);
+    }
+  }
+
+  function resetForm() {
+    var fields = ['f-rig','f-dealer','f-msrp','f-orig-name','f-orig-condition','f-orig-use',
+                  'f-curr-name','f-curr-paid','f-curr-spent','f-curr-value','f-curr-condition',
+                  'f-curr-use','f-spotter','f-location'];
+    fields.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    photoDataUrl = null;
+    photoFile = null;
+    currentSpotId = null;
+    currentSpotSubmitter = null;
+    document.getElementById('photo-preview').src = '';
+    document.getElementById('photo-preview').style.display = 'none';
+    document.getElementById('photo-placeholder').style.display = 'flex';
+    document.getElementById('photo-input').value = '';
+    setType('old');
+    approvals = { rooster: false, sean: false, phil: false };
+  }
+
+  // ── SAVE & SEND ──
+  async function saveDraftAndSend() {
+    if (!currentUser) { toast('SELECT USER FIRST'); return; }
+    await saveDraft();
+    if (!currentSpotId) { toast('SAVE FAILED — TRY AGAIN'); return; }
+
+    var link = window.location.origin + window.location.pathname + '?spot=' + currentSpotId;
+    var rig = val('f-rig') || 'a spotted ride';
+    var msg = encodeURIComponent('Spotted ' + rig + ' — add your take: ' + link);
+    window.location.href = 'sms:&body=' + msg;
+  }
+
+  // ── LOAD SPOT BY ID ──
+  async function loadSpotById(spotId) {
+    try {
+      var res = await sbFetch('/rest/v1/spots?id=eq.' + spotId + '&select=*', { method: 'GET' });
+      if (!res.ok) return;
+      var rows = await res.json();
+      if (!rows.length) return;
+      var s = rows[0];
+      currentSpotId = s.id;
+      currentSpotSubmitter = s.created_by;
+
+      setField('f-rig', s.rig);
+      setField('f-dealer', s.dealer);
+      setField('f-msrp', s.msrp);
+      setField('f-orig-name', s.orig_name);
+      setField('f-orig-condition', s.orig_condition);
+      setField('f-orig-use', s.orig_use);
+      setField('f-curr-name', s.curr_name);
+      setField('f-curr-paid', s.curr_paid);
+      setField('f-curr-spent', s.curr_spent);
+      setField('f-curr-value', s.curr_value);
+      setField('f-curr-condition', s.curr_condition);
+      setField('f-curr-use', s.curr_use);
+      setField('f-spotter', s.spotter);
+      setField('f-location', s.location);
+
+      if (s.vehicle_type) setType(s.vehicle_type);
+
+      if (s.photo_url) {
+        photoDataUrl = s.photo_url;
+        var img = document.getElementById('photo-preview');
+        img.src = s.photo_url;
+        img.style.display = 'block';
+        document.getElementById('photo-placeholder').style.display = 'none';
+      }
+
+      approvals.rooster = s.approved_rooster || false;
+      approvals.sean = s.approved_sean || false;
+      approvals.phil = s.approved_phil || false;
+      renderApprovals();
+
+      toast('SPOT LOADED');
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  // ── APPROVALS ──
+  function isAndyClark(user) {
+    return (user || '').toLowerCase().indexOf('andy') !== -1;
+  }
+
+  function updateApprovalUI() {
+    var andy = isAndyClark(currentSpotSubmitter || currentUser);
+    var title = document.getElementById('approval-title');
+    var rowSean = document.getElementById('approval-row-sean');
+    var rowPhil = document.getElementById('approval-row-phil');
+    if (andy) {
+      title.textContent = 'Submitted by Mr. Andy Clark — Rooster Approval Required';
+      rowSean.style.display = 'none';
+      rowPhil.style.display = 'none';
+    } else {
+      title.textContent = 'All Three Must Approve Before Posting';
+      rowSean.style.display = '';
+      rowPhil.style.display = '';
+    }
+  }
+
+  function toggleApproval(who) {
+    if (isAndyClark(currentUser)) {
+      toast('SUBMIT TO ROOSTER — YOU CANNOT APPROVE');
+      return;
+    }
+    var userLower = (currentUser || '').toLowerCase();
+    if (userLower !== who) {
+      toast('ONLY ' + who.toUpperCase() + ' CAN CHECK THIS');
+      return;
+    }
+    approvals[who] = !approvals[who];
+    renderApprovals();
+    if (currentSpotId) saveApprovals();
+  }
+
+  function renderApprovals() {
+    updateApprovalUI();
+    var andy = isAndyClark(currentSpotSubmitter || currentUser);
+    ['rooster','sean','phil'].forEach(function(who) {
+      var check = document.getElementById('check-' + who);
+      var name = document.getElementById('approve-name-' + who);
+      if (approvals[who]) {
+        check.classList.add('checked');
+        check.textContent = '✓';
+        name.classList.add('approved');
+      } else {
+        check.classList.remove('checked');
+        check.textContent = '';
+        name.classList.remove('approved');
+      }
+    });
+    var allApproved = andy
+      ? approvals.rooster
+      : (approvals.rooster && approvals.sean && approvals.phil);
+    var status = document.getElementById('approval-status');
+    if (allApproved) {
+      status.textContent = '✓ Approved — clear to post.';
+      status.className = 'approval-note ready';
+    } else {
+      if (andy) {
+        status.textContent = approvals.rooster ? '✓ Rooster approved.' : 'Waiting on Rooster.';
+      } else {
+        var pending = ['rooster','sean','phil'].filter(function(w) { return !approvals[w]; });
+        status.textContent = 'Waiting on: ' + pending.map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(', ');
+      }
+      status.className = 'approval-note';
+    }
+  }
+
+  async function saveApprovals() {
+    if (!currentSpotId) return;
+    var andy = isAndyClark(currentSpotSubmitter || currentUser);
+    var isReady = andy
+      ? approvals.rooster
+      : (approvals.rooster && approvals.sean && approvals.phil);
+    await sbFetch('/rest/v1/spots?id=eq.' + currentSpotId, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        approved_rooster: approvals.rooster,
+        approved_sean: approvals.sean,
+        approved_phil: approvals.phil,
+        status: isReady ? 'ready' : 'draft'
+      })
+    });
+  }
+
+  // ── MY SPOTS ──
+  async function loadMySpots() {
+    document.getElementById('my-spots-list').innerHTML = '<div class="empty-state">Loading...</div>';
+    try {
+      var res = await sbFetch('/rest/v1/spots?order=created_at.desc&select=*', { method: 'GET' });
+      var rows = await res.json();
+      renderSpotsList('my-spots-list', rows, false);
+    } catch(e) {
+      document.getElementById('my-spots-list').innerHTML = '<div class="empty-state">Could not load.</div>';
+    }
+  }
+
+  // ── SHARED SPOTS ──
+  async function loadSharedSpots() {
+    document.getElementById('shared-spots-list').innerHTML = '<div class="empty-state">Loading...</div>';
+    try {
+      var res = await sbFetch('/rest/v1/spots?order=created_at.desc&select=*', { method: 'GET' });
+      var rows = await res.json();
+      renderSpotsList('shared-spots-list', rows, false);
+    } catch(e) {
+      document.getElementById('shared-spots-list').innerHTML = '<div class="empty-state">Could not load.</div>';
+    }
+  }
+
+  function renderSpotsList(containerId, rows, mine) {
+    var el = document.getElementById(containerId);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty-state">No spots yet.</div>';
+      return;
+    }
+    el.innerHTML = rows.map(function(s) {
+      var statusClass = s.status === 'ready' ? 'status-ready' : 'status-draft';
+      var statusLabel = s.status === 'ready' ? 'READY' : 'DRAFT';
+      var r = s.approved_rooster ? 'pip-on' : 'pip-off';
+      var se = s.approved_sean ? 'pip-on' : 'pip-off';
+      var ph = s.approved_phil ? 'pip-on' : 'pip-off';
+      var date = new Date(s.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+      var thumb = s.photo_url
+        ? '<img src="' + s.photo_url + '" style="width:56px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;">'
+        : '<div style="width:56px;height:56px;background:#1a1a1a;border-radius:4px;flex-shrink:0;"></div>';
+      var canDelete = (s.created_by === currentUser);
+      var deleteBtn = canDelete
+        ? '<button class="delete-btn" onclick="event.stopPropagation();deleteSpot(\'' + s.id + '\',\'' + containerId + '\')">DELETE</button>'
+        : '';
+      return '<div class="spot-card-wrap" id="wrap-' + s.id + '">' +
+        deleteBtn +
+        '<div class="spot-card" onclick="openSpot(\'' + s.id + '\')" ' +
+          (canDelete ? 'data-deletable="true" onmousedown="swipeStart(event,\'' + s.id + '\')" ontouchstart="swipeStart(event,\'' + s.id + '\')"' : '') + '>' +
+          '<div style="display:flex;gap:12px;align-items:flex-start;">' +
+            thumb +
+            '<div style="flex:1;min-width:0;">' +
+              '<div class="spot-card-header">' +
+                '<div class="spot-card-rig">' + (s.rig || 'UNNAMED RIG') + '</div>' +
+                '<div class="spot-card-status ' + statusClass + '">' + statusLabel + '</div>' +
+              '</div>' +
+              '<div class="spot-card-meta">By ' + (s.created_by || '—') + '  ·  ' + date + '</div>' +
+              '<div class="spot-card-approvals">' +
+                '<span class="approval-pip ' + r + '">Rooster</span>' +
+                '<span class="approval-pip ' + se + '">Sean</span>' +
+                '<span class="approval-pip ' + ph + '">Phil</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    initSwipe();
+  }
+
+  // ── SWIPE TO DELETE ──
+  var swipeStartX = 0;
+  var swipeEl = null;
+  var swipeId = null;
+
+  function swipeStart(e, id) {
+    swipeStartX = e.touches ? e.touches[0].clientX : e.clientX;
+    swipeId = id;
+    swipeEl = document.querySelector('#wrap-' + id + ' .spot-card');
+    swipeEl.style.transition = 'none';
+  }
+
+  function initSwipe() {
+    document.querySelectorAll('.spot-card[data-deletable]').forEach(function(card) {
+      card.addEventListener('touchmove', function(e) {
+        if (!swipeEl || swipeEl !== card) return;
+        var dx = e.touches[0].clientX - swipeStartX;
+        if (dx < 0) {
+          card.style.transform = 'translateX(' + Math.max(dx, -100) + 'px)';
+          e.preventDefault();
+        }
+      }, { passive: false });
+      card.addEventListener('touchend', function() {
+        if (!swipeEl || swipeEl !== card) return;
+        var wrap = document.getElementById('wrap-' + swipeId);
+        var deleteBtn = wrap ? wrap.querySelector('.delete-btn') : null;
+        var currentX = parseFloat(card.style.transform.replace('translateX(','')) || 0;
+        if (currentX < -60) {
+          card.style.transition = 'transform 0.2s';
+          card.style.transform = 'translateX(-80px)';
+          if (deleteBtn) deleteBtn.style.opacity = '1';
+        } else {
+          card.style.transition = 'transform 0.2s';
+          card.style.transform = 'translateX(0)';
+          if (deleteBtn) deleteBtn.style.opacity = '0';
+        }
+        swipeEl = null; swipeId = null;
+      });
+    });
+  }
+
+  async function deleteSpot(id, containerId) {
+    if (!confirm('Delete this spot?')) return;
+    try {
+      await sbFetch('/rest/v1/spots?id=eq.' + id, { method: 'DELETE' });
+      var wrap = document.getElementById('wrap-' + id);
+      if (wrap) wrap.remove();
+      toast('DELETED');
+    } catch(e) {
+      toast('DELETE FAILED');
+    }
+  }
+
+  function openSpot(id) {
+    loadSpotById(id);
+    go('form');
+    setTimeout(function() { window.scrollTo(0,0); toast('SPOT LOADED — EDIT & PREVIEW'); }, 200);
+  }
+
+  // ── NAV ──
+  function go(tab) {
+    var tabs = ['form','preview','post','mine','shared'];
+    document.querySelectorAll('.tab').forEach(function(t, i) {
+      t.classList.toggle('active', tabs[i] === tab);
+    });
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('panel-' + tab).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // ── CAPTION ──
+  function copyCaption() {
+    var text = document.getElementById('caption-out').textContent;
+    if (!text || text === '—') { toast('BUILD CARD FIRST'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() { toast('CAPTION COPIED'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      toast('CAPTION COPIED');
+    }
+  }
+
+  // ── TOAST ──
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2400);
+  }
+</script>
+</body>
+</html>
