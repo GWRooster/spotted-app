@@ -314,6 +314,7 @@
   <button class="user-btn" onclick="setUser('Rooster')">ROOSTER</button>
   <button class="user-btn" onclick="setUser('Sean')">SEAN</button>
   <button class="user-btn" onclick="setUser('Phil')">PHIL</button>
+  <button class="user-btn" onclick="setUser('Mr. Andy Clark')">MR. ANDY CLARK</button>
 </div>
 
 <header>
@@ -466,16 +467,16 @@
 <div class="panel" id="panel-post">
 
   <div class="approval-block">
-    <div class="approval-title">All Three Must Approve Before Posting</div>
-    <div class="approval-row">
+    <div class="approval-title" id="approval-title">All Three Must Approve Before Posting</div>
+    <div class="approval-row" id="approval-row-rooster">
       <span class="approval-name" id="approve-name-rooster">Rooster</span>
       <button class="approval-check" id="check-rooster" onclick="toggleApproval('rooster')"></button>
     </div>
-    <div class="approval-row">
+    <div class="approval-row" id="approval-row-sean">
       <span class="approval-name" id="approve-name-sean">Sean</span>
       <button class="approval-check" id="check-sean" onclick="toggleApproval('sean')"></button>
     </div>
-    <div class="approval-row">
+    <div class="approval-row" id="approval-row-phil">
       <span class="approval-name" id="approve-name-phil">Phil</span>
       <button class="approval-check" id="check-phil" onclick="toggleApproval('phil')"></button>
     </div>
@@ -520,6 +521,7 @@
   var photoFile = null;
   var vehicleType = 'old';
   var currentSpotId = null;
+  var currentSpotSubmitter = null;
   var approvals = { rooster: false, sean: false, phil: false };
 
   // ── USER ──
@@ -768,6 +770,7 @@
       if (!rows.length) return;
       var s = rows[0];
       currentSpotId = s.id;
+      currentSpotSubmitter = s.created_by;
 
       setField('f-rig', s.rig);
       setField('f-dealer', s.dealer);
@@ -806,7 +809,31 @@
   }
 
   // ── APPROVALS ──
+  function isAndyClark(user) {
+    return (user || '').toLowerCase().indexOf('andy') !== -1;
+  }
+
+  function updateApprovalUI() {
+    var andy = isAndyClark(currentSpotSubmitter || currentUser);
+    var title = document.getElementById('approval-title');
+    var rowSean = document.getElementById('approval-row-sean');
+    var rowPhil = document.getElementById('approval-row-phil');
+    if (andy) {
+      title.textContent = 'Submitted by Mr. Andy Clark — Rooster Approval Required';
+      rowSean.style.display = 'none';
+      rowPhil.style.display = 'none';
+    } else {
+      title.textContent = 'All Three Must Approve Before Posting';
+      rowSean.style.display = '';
+      rowPhil.style.display = '';
+    }
+  }
+
   function toggleApproval(who) {
+    if (isAndyClark(currentUser)) {
+      toast('SUBMIT TO ROOSTER — YOU CANNOT APPROVE');
+      return;
+    }
     var userLower = (currentUser || '').toLowerCase();
     if (userLower !== who) {
       toast('ONLY ' + who.toUpperCase() + ' CAN CHECK THIS');
@@ -818,6 +845,8 @@
   }
 
   function renderApprovals() {
+    updateApprovalUI();
+    var andy = isAndyClark(currentSpotSubmitter || currentUser);
     ['rooster','sean','phil'].forEach(function(who) {
       var check = document.getElementById('check-' + who);
       var name = document.getElementById('approve-name-' + who);
@@ -831,27 +860,37 @@
         name.classList.remove('approved');
       }
     });
-    var all = approvals.rooster && approvals.sean && approvals.phil;
+    var allApproved = andy
+      ? approvals.rooster
+      : (approvals.rooster && approvals.sean && approvals.phil);
     var status = document.getElementById('approval-status');
-    if (all) {
-      status.textContent = '✓ All approved — clear to post.';
+    if (allApproved) {
+      status.textContent = '✓ Approved — clear to post.';
       status.className = 'approval-note ready';
     } else {
-      var pending = ['rooster','sean','phil'].filter(function(w) { return !approvals[w]; });
-      status.textContent = 'Waiting on: ' + pending.map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(', ');
+      if (andy) {
+        status.textContent = approvals.rooster ? '✓ Rooster approved.' : 'Waiting on Rooster.';
+      } else {
+        var pending = ['rooster','sean','phil'].filter(function(w) { return !approvals[w]; });
+        status.textContent = 'Waiting on: ' + pending.map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(', ');
+      }
       status.className = 'approval-note';
     }
   }
 
   async function saveApprovals() {
     if (!currentSpotId) return;
+    var andy = isAndyClark(currentSpotSubmitter || currentUser);
+    var isReady = andy
+      ? approvals.rooster
+      : (approvals.rooster && approvals.sean && approvals.phil);
     await sbFetch('/rest/v1/spots?id=eq.' + currentSpotId, {
       method: 'PATCH',
       body: JSON.stringify({
         approved_rooster: approvals.rooster,
         approved_sean: approvals.sean,
         approved_phil: approvals.phil,
-        status: (approvals.rooster && approvals.sean && approvals.phil) ? 'ready' : 'draft'
+        status: isReady ? 'ready' : 'draft'
       })
     });
   }
