@@ -608,9 +608,11 @@
     var noPhoto = document.getElementById('card-no-photo');
     if (photoDataUrl) {
       cardImg.src = photoDataUrl;
+      cardImg.style.display = 'block';
       cardImg.classList.remove('hidden');
       noPhoto.style.display = 'none';
     } else {
+      cardImg.style.display = 'none';
       cardImg.classList.add('hidden');
       noPhoto.style.display = 'flex';
     }
