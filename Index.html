@@ -279,20 +279,20 @@
   }
 
   .delete-btn {
-    position: absolute;
-    right: 0; top: 0; bottom: 0;
-    width: 80px;
-    background: var(--red);
-    color: var(--white);
+    background: transparent;
     border: none;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.85rem;
-    letter-spacing: 0.12em;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 1;
+    padding: 4px 6px;
+    color: #444;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+    -webkit-appearance: none;
+    touch-action: manipulation;
   }
+
+  .delete-btn:active { color: var(--red); }
 
   .spot-card {
     background: #111; border: 1px solid #222; border-radius: 6px;
@@ -966,7 +966,7 @@
     }
   }
 
-  function renderSpotsList(containerId, rows, mine) {
+  function renderSpotsList(containerId, rows) {
     var el = document.getElementById(containerId);
     if (!rows || !rows.length) {
       el.innerHTML = '<div class="empty-state">No spots yet.</div>';
@@ -983,19 +983,20 @@
         ? '<img src="' + s.photo_url + '" style="width:56px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;">'
         : '<div style="width:56px;height:56px;background:#1a1a1a;border-radius:4px;flex-shrink:0;"></div>';
       var canDelete = (s.created_by === currentUser);
-      var deleteBtn = canDelete
-        ? '<button class="delete-btn" onclick="event.stopPropagation();deleteSpot(\'' + s.id + '\',\'' + containerId + '\')">DELETE</button>'
+      var trashBtn = canDelete
+        ? '<button class="delete-btn" onclick="event.stopPropagation();deleteSpot('' + s.id + '','' + containerId + '')">&#x1F5D1;</button>'
         : '';
       return '<div class="spot-card-wrap" id="wrap-' + s.id + '">' +
-        deleteBtn +
-        '<div class="spot-card" onclick="openSpot(\'' + s.id + '\')" ' +
-          (canDelete ? 'data-deletable="true" onmousedown="swipeStart(event,\'' + s.id + '\')" ontouchstart="swipeStart(event,\'' + s.id + '\')"' : '') + '>' +
+        '<div class="spot-card" onclick="openSpot('' + s.id + '')">' +
           '<div style="display:flex;gap:12px;align-items:flex-start;">' +
             thumb +
             '<div style="flex:1;min-width:0;">' +
               '<div class="spot-card-header">' +
                 '<div class="spot-card-rig">' + (s.rig || 'UNNAMED RIG') + '</div>' +
-                '<div class="spot-card-status ' + statusClass + '">' + statusLabel + '</div>' +
+                '<div style="display:flex;align-items:center;gap:6px;">' +
+                  '<div class="spot-card-status ' + statusClass + '">' + statusLabel + '</div>' +
+                  trashBtn +
+                '</div>' +
               '</div>' +
               '<div class="spot-card-meta">By ' + (s.created_by || '—') + '  ·  ' + date + '</div>' +
               '<div class="spot-card-approvals">' +
@@ -1008,48 +1009,6 @@
         '</div>' +
       '</div>';
     }).join('');
-    initSwipe();
-  }
-
-  // ── SWIPE TO DELETE ──
-  var swipeStartX = 0;
-  var swipeEl = null;
-  var swipeId = null;
-
-  function swipeStart(e, id) {
-    swipeStartX = e.touches ? e.touches[0].clientX : e.clientX;
-    swipeId = id;
-    swipeEl = document.querySelector('#wrap-' + id + ' .spot-card');
-    swipeEl.style.transition = 'none';
-  }
-
-  function initSwipe() {
-    document.querySelectorAll('.spot-card[data-deletable]').forEach(function(card) {
-      card.addEventListener('touchmove', function(e) {
-        if (!swipeEl || swipeEl !== card) return;
-        var dx = e.touches[0].clientX - swipeStartX;
-        if (dx < 0) {
-          card.style.transform = 'translateX(' + Math.max(dx, -100) + 'px)';
-          e.preventDefault();
-        }
-      }, { passive: false });
-      card.addEventListener('touchend', function() {
-        if (!swipeEl || swipeEl !== card) return;
-        var wrap = document.getElementById('wrap-' + swipeId);
-        var deleteBtn = wrap ? wrap.querySelector('.delete-btn') : null;
-        var currentX = parseFloat(card.style.transform.replace('translateX(','')) || 0;
-        if (currentX < -60) {
-          card.style.transition = 'transform 0.2s';
-          card.style.transform = 'translateX(-80px)';
-          if (deleteBtn) deleteBtn.style.opacity = '1';
-        } else {
-          card.style.transition = 'transform 0.2s';
-          card.style.transform = 'translateX(0)';
-          if (deleteBtn) deleteBtn.style.opacity = '0';
-        }
-        swipeEl = null; swipeId = null;
-      });
-    });
   }
 
   async function deleteSpot(id, containerId) {
