@@ -540,6 +540,13 @@
   var SUPABASE_URL = 'https://ytijmfkktfjoiuahszip.supabase.co';
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0aWptZmtrdGZqb2l1YWhzemlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDgxMTEsImV4cCI6MjA5NjUyNDExMX0.-lPni2MzjtteVUhf_4TvORl3MU9K5wSyEKcAaBImtKE';
 
+  // Safe storage wrapper — falls back to in-memory if sessionStorage blocked (sandboxed iframe, etc.)
+  var _mem = {};
+  var _store = (function() {
+    try { sessionStorage.setItem('__t','1'); sessionStorage.removeItem('__t'); return sessionStorage; }
+    catch(e) { return { getItem: function(k){ return _mem[k]||null; }, setItem: function(k,v){ _mem[k]=v; }, removeItem: function(k){ delete _mem[k]; } }; }
+  })();
+
   var currentUser = null;
   var photoDataUrl = null;
   var photoFile = null;
@@ -551,7 +558,7 @@
   // ── USER ──
   function setUser(name) {
     currentUser = name;
-    sessionStorage.setItem('spotted_user', name);
+    _store.setItem('spotted_user', name);
     document.getElementById('user-overlay').style.display = 'none';
     document.getElementById('user-badge').textContent = name.toUpperCase();
     checkUrlForSpot();
@@ -563,7 +570,7 @@
 
   // ── INIT ──
   window.addEventListener('load', function() {
-    var saved = sessionStorage.getItem('spotted_user');
+    var saved = _store.getItem('spotted_user');
     if (saved) {
       currentUser = saved;
       document.getElementById('user-overlay').style.display = 'none';
@@ -984,10 +991,10 @@
         : '<div style="width:56px;height:56px;background:#1a1a1a;border-radius:4px;flex-shrink:0;"></div>';
       var canDelete = (s.created_by === currentUser);
       var trashBtn = canDelete
-        ? '<button class="delete-btn" onclick="event.stopPropagation();deleteSpot('' + s.id + '','' + containerId + '')">&#x1F5D1;</button>'
+        ? '<button class="delete-btn" onclick="event.stopPropagation();deleteSpot(\'' + s.id + '\',\'' + containerId + '\')">&#x1F5D1;</button>'
         : '';
       return '<div class="spot-card-wrap" id="wrap-' + s.id + '">' +
-        '<div class="spot-card" onclick="openSpot('' + s.id + '')">' +
+        '<div class="spot-card" onclick="openSpot(\'' + s.id + '\')">'+  
           '<div style="display:flex;gap:12px;align-items:flex-start;">' +
             thumb +
             '<div style="flex:1;min-width:0;">' +
@@ -1064,4 +1071,3 @@
 </script>
 </body>
 </html>
- 
