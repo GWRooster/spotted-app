@@ -33,14 +33,16 @@
   /* USER PICKER OVERLAY */
   #user-overlay {
     position: fixed;
-    inset: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background: var(--black);
-    z-index: 100;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px 30px;
+    pointer-events: all;
+    -webkit-overflow-scrolling: touch;
   }
 
   #user-overlay h2 {
@@ -74,6 +76,11 @@
     -webkit-appearance: none;
     touch-action: manipulation;
     transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    z-index: 10000;
+    pointer-events: all;
+    display: block;
+    -webkit-tap-highlight-color: rgba(232,200,74,0.3);
   }
 
   .user-btn:active { background: var(--yellow); color: var(--black); border-color: var(--yellow); }
@@ -335,10 +342,10 @@
 <div id="user-overlay">
   <h2>SPOTTED</h2>
   <p>Who are you?</p>
-  <button class="user-btn" onclick="setUser('Rooster')">ROOSTER</button>
-  <button class="user-btn" onclick="setUser('Sean')">SEAN</button>
-  <button class="user-btn" onclick="setUser('Phil')">PHIL</button>
-  <button class="user-btn" onclick="setUser('Mr. Andy Clark')">MR. ANDY CLARK</button>
+  <button class="user-btn" id="btn-rooster">ROOSTER</button>
+  <button class="user-btn" id="btn-sean">SEAN</button>
+  <button class="user-btn" id="btn-phil">PHIL</button>
+  <button class="user-btn" id="btn-andy">MR. ANDY CLARK</button>
 </div>
 
 <header>
@@ -570,6 +577,26 @@
 
   // ── INIT ──
   window.addEventListener('load', function() {
+    // Wire user buttons via addEventListener — most reliable on iOS Safari
+    var userMap = [
+      ['btn-rooster', 'Rooster'],
+      ['btn-sean', 'Sean'],
+      ['btn-phil', 'Phil'],
+      ['btn-andy', 'Mr. Andy Clark']
+    ];
+    userMap.forEach(function(pair) {
+      var el = document.getElementById(pair[0]);
+      if (!el) return;
+      // Use both touchend and click for maximum iOS compatibility
+      function handler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setUser(pair[1]);
+      }
+      el.addEventListener('touchend', handler, { passive: false });
+      el.addEventListener('click', handler);
+    });
+
     var saved = _store.getItem('spotted_user');
     if (saved) {
       currentUser = saved;
